@@ -61,6 +61,24 @@ tracks = sp.playlist_tracks(selected_playlist['id'])
 # Get the names of the tracks and artists in the selected playlist
 track_info = [(track['track']['name'], track['track']['artists'][0]['name']) for track in tracks['items']]
 
+
+# Ask the user where to save the downloaded songs
+# Set up the output file path based on user's selection
+output_option = input('Enter the number of the option you want to select:\n'
+                      '1. Save downloaded files in current directory\n'
+                      '2. Save downloaded files in default Music Folder\n'
+                      '3. Enter custom file path\n')
+if output_option == '1':
+    output_dir = '.'
+elif output_option == '2':
+    output_dir = '~/Music'
+else:
+    output_dir = input('Enter the file path where you want to save the downloaded files: ')
+
+# Create the output directory if it doesn't exist
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
 # Search for each track on YouTube and download the audio
 video_urls_and_titles = []
 for track_name, artist_name in track_info:
@@ -78,14 +96,12 @@ for track_name, artist_name in track_info:
 
     video_urls_and_titles.append((best_match['url'], best_match['title'], artist_name))
 
-
-
-    # Download the songs
+# Download the songs
 print('Downloading songs...')
 for i, (video_url, song_title, artist_name) in enumerate(tqdm(video_urls_and_titles)):
     ydl_opts = {
         'format': 'bestaudio/best',
-        'outtmpl': f'{playlist_name}/%(title)s.%(ext)s',
+        'outtmpl': f'{output_dir}/{playlist_name}/%(title)s.%(ext)s',
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
@@ -96,5 +112,6 @@ for i, (video_url, song_title, artist_name) in enumerate(tqdm(video_urls_and_tit
         ydl.download([video_url])
     tqdm.write(f'{song_title} downloaded ({i+1}/{len(video_urls_and_titles)})')
 
-    # Print a success message
+# Print a success message
 print(f'\nAll songs from playlist "{playlist_name}" downloaded successfully!')
+
