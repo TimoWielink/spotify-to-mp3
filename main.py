@@ -1,3 +1,4 @@
+
 # Hightown - Spotify to MP3
 # Created by Timo Wielink and ChatGPT
 # GitHub: https://github.com/TimoWielink
@@ -29,16 +30,6 @@ if not token:
 
 sp = spotipy.Spotify(auth=token)
 
-# Set up the YouTube downloader
-ydl_opts = {
-    'format': 'bestaudio/best',
-    'postprocessors': [{
-        'key': 'FFmpegExtractAudio',
-        'preferredcodec': 'mp3',
-        'preferredquality': '320',
-    }],
-}
-
 # Get the user's playlists
 playlists = sp.current_user_playlists()
 
@@ -57,10 +48,8 @@ playlist_name = selected_playlist['name']
 # Get the tracks in the selected playlist
 tracks = sp.playlist_tracks(selected_playlist['id'])
 
-
 # Get the names of the tracks and artists in the selected playlist
 track_info = [(track['track']['name'], track['track']['artists'][0]['name']) for track in tracks['items']]
-
 
 # Ask the user where to save the downloaded songs
 # Set up the output file path based on user's selection
@@ -84,7 +73,7 @@ video_urls_and_titles = []
 for track_name, artist_name in track_info:
     # Search for the track on YouTube
     search_query = f'{track_name} {artist_name} audio'
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+    with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
         search_results = ydl.extract_info(f'ytsearch:{search_query}', download=False)['entries']
 
     # Find the video URL that best matches the track name
@@ -96,22 +85,25 @@ for track_name, artist_name in track_info:
 
     video_urls_and_titles.append((best_match['url'], best_match['title'], artist_name))
 
+
 # Download the songs
-print('Downloading songs...')
-for i, (video_url, song_title, artist_name) in enumerate(tqdm(video_urls_and_titles)):
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'outtmpl': f'{output_dir}/{playlist_name}/%(title)s.%(ext)s',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '320',
-        }],
-    }
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([video_url])
-    tqdm.write(f'{song_title} downloaded ({i+1}/{len(video_urls_and_titles)})')
+    print('Downloading songs...')
+    for i, (video_url, song_title, artist_name) in enumerate(tqdm(video_urls_and_titles)):
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'outtmpl': f'{output_dir}/{playlist_name}/%(title)s.%(ext)s',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '320',
+            }],
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            try:
+                ydl.download([video_url])
+            except yt_dlp.DownloadError:
+                print(f'Error downloading "{song_title}" by {artist_name}')
+        tqdm.write(f'{song_title} downloaded ({i+1}/{len(video_urls_and_titles)})')
 
-# Print a success message
-print(f'\nAll songs from playlist "{playlist_name}" downloaded successfully!')
-
+    # Print a success message
+    print(f'\nAll songs from playlist "{playlist_name}" downloaded successfully!')
