@@ -1,4 +1,4 @@
-# Spotify To MP3
+![Imgur](https://i.imgur.com/rV151kd.png)
 
 A simple Python script to download songs from a Spotify playlist and convert them to MP3.
 
